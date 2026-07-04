@@ -222,6 +222,7 @@
       <span class="panel-title">런타임</span>
       <span class="head-right">
         <span class="status" id="status">대기</span>
+        <button class="icon-btn" id="pipBtn" title="미니창(다른 앱 위에 표시)" aria-label="미니창"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2.5"/><rect x="12" y="11" width="7" height="5" rx="1" fill="currentColor" stroke="none"/></svg></button>
         <button class="icon-btn" id="bellBtn" title="알림 켜기/끄기" aria-label="알림">🔔</button>
         <button class="icon-btn" id="gearBtn" title="설정" aria-label="설정">⚙</button>
       </span>
@@ -619,6 +620,12 @@
   function alertFor(cls){
     if(!settings.alerts)return;
     var snd=settings.alertMode!=="vib",vb=settings.alertMode!=="sound";
+    var cueNm=state.cueMode&&cues[state.cueIdx]?cues[state.cueIdx].n:"";
+    if(document.visibilityState!=="visible"){
+      if(cls==="warn")notify("⏰ 1분 남음",cueNm);
+      else if(cls==="crit")notify("⏰ 10초 남음",cueNm);
+      else if(cls==="over")notify("🔴 시간 종료!",cueNm);
+    }
     if(cls==="warn"){if(vb)vib(vibPattern(1));if(snd)playSound(1);}
     else if(cls==="crit"){if(vb)vib(vibPattern(2));if(snd)playSound(2);}
     else if(cls==="over"){
@@ -634,7 +641,74 @@
     if(settings.alerts){ensureAudio();if(settings.alertMode!=="vib")playSound(1);if(settings.alertMode!=="sound")vib(80);}
   });
 
-  /* 알림 옵션 UI */
+  /* ===== 백그라운드 유지음 (진행 중 브라우저가 앱을 재우지 않도록) ===== */
+  var kaOsc=null;
+  function startKeepAlive(){
+    ensureAudio();if(!actx||kaOsc)return;
+    try{
+      kaOsc=actx.createOscillator();
+      var g=actx.createGain();g.gain.value=0.004;
+      kaOsc.frequency.value=25;kaOsc.connect(g);g.connect(actx.destination);kaOsc.start();
+    }catch(e){kaOsc=null;}
+  }
+  function stopKeepAlive(){try{if(kaOsc){kaOsc.stop();kaOsc.disconnect();kaOsc=null;}}catch(e){kaOsc=null;}}
+
+  /* ===== 시스템 알림 (앱이 화면에 없을 때) ===== */
+  function askNotif(){try{if("Notification" in window&&Notification.permission==="default")Notification.requestPermission();}catch(e){}}
+  function notify(title,body){
+    try{
+      if(!("Notification" in window)||Notification.permission!=="granted")return;
+      if(navigator.serviceWorker&&navigator.serviceWorker.controller){
+        navigator.serviceWorker.ready.then(function(reg){
+          reg.showNotification(title,{body:body||"",tag:"stage-clock",renotify:true,icon:"icon-192.png"});
+        });
+      }else{new Notification(title,{body:body||""});}
+    }catch(e){}
+  }
+
+  /* ===== 미니창(PiP): 다른 앱 위에 떠 있는 타이머 ===== */
+  var pipCv=null,pipVid=null,pipTm=null;
+  function pipCls(){var c=remainEl.className;return c.indexOf("over")>-1?"over":(c.indexOf("crit")>-1?"crit":(c.indexOf("warn")>-1?"warn":"good"));}
+  function pipDraw(){
+    if(!pipCv)return;
+    var ctx=pipCv.getContext("2d"),W=pipCv.width,H=pipCv.height;
+    ctx.fillStyle=settings.bg;ctx.fillRect(0,0,W,H);
+    var cols={good:"#4ade80",warn:"#fbbf24",crit:"#f4515b",over:"#f4515b"};
+    var main=state.running?remainEl.textContent:"--:--";
+    ctx.textAlign="center";ctx.textBaseline="middle";
+    if(state.cueMode&&$("cueNow").textContent){
+      ctx.fillStyle=settings.text;ctx.font="600 34px sans-serif";
+      ctx.fillText($("cueNow").textContent.slice(0,14),W/2,44);
+    }
+    ctx.fillStyle=state.running?cols[pipCls()]:settings.text;
+    ctx.font="700 110px 'Chakra Petch',monospace";
+    ctx.fillText(main,W/2,H/2+14);
+    ctx.fillStyle="#8a93a5";ctx.font="500 26px sans-serif";
+    var sub=state.running?("종료 "+endTimeEl.textContent):"대기";
+    ctx.fillText(sub,W/2,H-34);
+  }
+  function stopPip(){
+    try{if(document.pictureInPictureElement)document.exitPictureInPicture();}catch(e){}
+    if(pipTm){clearInterval(pipTm);pipTm=null;}
+    try{if(pipVid){pipVid.pause();pipVid.srcObject=null;}}catch(e){}
+    pipVid=null;pipCv=null;
+  }
+  $("pipBtn").addEventListener("click",function(){
+    if(pipVid){stopPip();return;}
+    if(!document.pictureInPictureEnabled){alert("이 브라우저는 미니창(PiP)을 지원하지 않습니다. Chrome을 사용해 주세요.");return;}
+    try{
+      pipCv=document.createElement("canvas");pipCv.width=480;pipCv.height=270;
+      pipDraw();
+      var stream=pipCv.captureStream(5);
+      pipVid=document.createElement("video");
+      pipVid.muted=true;pipVid.playsInline=true;pipVid.srcObject=stream;
+      pipVid.addEventListener("leavepictureinpicture",stopPip);
+      pipVid.play().then(function(){return pipVid.requestPictureInPicture();})
+        .then(function(){pipTm=setInterval(pipDraw,300);})
+        .catch(function(e){stopPip();alert("미니창을 열 수 없습니다: "+((e&&e.message)||"오류"));});
+    }catch(e){stopPip();}
+  });
+
   function paintAlertOpts(){
     [["amRow","alertMode"],["asRow","soundType"],["avRow","vibLen"],["adRow","alarmDur"]].forEach(function(p){
       var row=$(p[0]);if(!row)return;
@@ -754,7 +828,7 @@
     state.running=true;state.paused=false;
     state.mode="down";state.lastCls=null;
     state.cueMode=false;paintCueChrome();
-    ensureAudio();
+    ensureAudio();askNotif();startKeepAlive();
     panel.className="panel run-mode";
     statusEl.textContent="진행 중";statusEl.className="status live";
     requestWake();paintCountdown();
@@ -1171,7 +1245,7 @@
   }
   $("cueStartBtn").addEventListener("click",function(){
     if(!cues.length){$("cueName").focus();return;}
-    ensureAudio();
+    ensureAudio();askNotif();startKeepAlive();
     state.cueMode=true;
     state.planEndMs=Date.now()+cueTotalMin()*60000;
     runLog={date:Date.now(),items:[]};
@@ -1302,7 +1376,7 @@
     state.running=true;state.paused=false;
     state.mode=curMode;state.lastCls=null;
     state.cueMode=false;paintCueChrome();
-    ensureAudio();
+    ensureAudio();askNotif();startKeepAlive();
     panel.className="panel run-mode";
     statusEl.textContent="진행 중";statusEl.className="status live";
     requestWake();paintCountdown();
@@ -1323,6 +1397,7 @@
     paintCountdown();
   }
   function stop(){
+    stopKeepAlive();stopPip();
     if(state.cueMode){logCurrentCue();finalizeRun();}
     state.running=false;state.paused=false;state.cueMode=false;
     panel.className="panel input-mode";
