@@ -107,11 +107,11 @@
   .cue-row .body{flex:1;display:flex;align-items:center;gap:8px;min-width:0;cursor:pointer}
   .cue-addrow{display:flex;gap:7px;margin-bottom:10px}
   .cue-addrow .nm-in{flex:1;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:0 12px;font-size:15px;outline:none;min-width:0}
-  .cue-addrow .mm-in{width:64px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:0 8px;font-size:16px;font-family:var(--display);font-weight:600;text-align:center;outline:none;-moz-appearance:textfield}
+  .cue-addrow .mm-in{width:56px;background:var(--surface-2);border:1px solid var(--line);border-radius:10px;color:var(--text);padding:0 8px;font-size:16px;font-family:var(--display);font-weight:600;text-align:center;outline:none;-moz-appearance:textfield}
   .cue-addrow .mm-in::-webkit-outer-spin-button,.cue-addrow .mm-in::-webkit-inner-spin-button{-webkit-appearance:none}
   .cue-addrow .btn{padding:11px 14px;font-size:14px;background:var(--surface-2);color:var(--accent);border:1px solid var(--line)}
   .cue-actions{display:flex;gap:8px}
-  .cue-actions .btn{flex:1;padding:12px;font-size:15px}
+  .cue-actions .btn{flex:1;padding:12px;font-size:15px;white-space:nowrap}
   .cue-head{text-align:center;margin-bottom:4px;display:none}
   .cue-head .now{font-size:clamp(17px,4.6vmin,24px);font-weight:600}
   .cue-head .nxt{font-size:13px;color:var(--muted);margin-top:3px}
@@ -130,6 +130,7 @@
   .cue-sum{font-size:17px;color:var(--accent);text-align:center;margin:4px 0 12px;font-family:var(--display);font-weight:600;min-height:20px}
   .tclr{background:var(--surface-2);border:1px solid var(--line);color:var(--muted);border-radius:999px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;font-family:var(--ui)}
   .tclr:active{filter:brightness(1.25)}
+  .panel.run-mode #cueClearAll{display:none!important}
   .t24{display:inline-flex;align-items:center;gap:4px}
   .tbtn{background:var(--surface-2);border:1px solid var(--line);border-radius:10px;color:var(--text);font-family:var(--display);font-size:20px;font-weight:600;text-align:center;padding:10px 18px;cursor:pointer;-webkit-tap-highlight-color:transparent;min-width:104px}
   .tbtn.empty{color:var(--muted)}
@@ -185,6 +186,13 @@
   .sheet-btns .btn{flex:1;padding:13px;font-size:15px}
   .btn.primary{background:var(--accent);color:var(--on-accent)}
   .btn.ghost{background:transparent;color:var(--text);border:1px solid var(--line)}
+  .setsec{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;background:var(--surface-2);overflow:hidden}
+  .setsec summary{list-style:none;cursor:pointer;padding:14px;font-size:14px;font-weight:600;display:flex;justify-content:space-between;align-items:center;-webkit-tap-highlight-color:transparent}
+  .setsec summary::-webkit-details-marker{display:none}
+  .setsec summary::after{content:"▾";color:var(--muted);transition:transform .15s}
+  .setsec[open] summary::after{transform:rotate(180deg)}
+  .setsec .inner{padding:0 14px 14px}
+  .setsec .inner>.set-label:first-child{margin-top:2px}
   .set-label{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 9px}
   .set-label:first-of-type{margin-top:4px}
   .font-row,.theme-row{display:flex;flex-wrap:wrap;gap:8px}
@@ -220,6 +228,7 @@
   <section class="panel input-mode" id="panel">
     <div class="panel-head">
       <span class="panel-title">런타임</span>
+      <button class="tclr" id="cueClearAll" style="display:none;color:var(--crit);padding:6px 12px;font-size:12px">전체 지우기</button>
       <span class="head-right">
         <span class="status" id="status">대기</span>
         <button class="icon-btn" id="pipBtn" title="미니창(다른 앱 위에 표시)" aria-label="미니창"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2.5"/><rect x="12" y="11" width="7" height="5" rx="1" fill="currentColor" stroke="none"/></svg></button>
@@ -232,7 +241,7 @@
       <div class="mode-row">
         <button class="mchip active" id="modeDown">카운트다운</button>
         <button class="mchip" id="modeUp">카운트업</button>
-        <button class="mchip" id="modeEnd">종료시각</button>
+        <button class="mchip" id="modeTimer">타이머</button>
         <button class="mchip" id="modeCue">큐시트</button>
       </div>
       <div class="input-row" id="inputRow">
@@ -242,11 +251,14 @@
         </label>
         <button class="btn btn-go" id="goBtn">시작</button>
       </div>
-      <div class="input-row" id="endTimeArea" style="display:none">
-        <span style="flex:1;display:flex;justify-content:center">
-          <button class="tbtn big empty" id="endBtn24">--:--</button>
-        </span>
-        <button class="btn btn-go" id="endGoBtn">시작</button>
+      <div id="timerArea" style="display:none">
+        <button class="btn btn-go" id="swStartBtn" style="width:100%;padding:14px;font-size:16px">타이머 시작</button>
+        <div class="paste-hint" id="swSummary" style="margin-top:10px"></div>
+        <div class="cue-actions" id="swApplyRow" style="display:none;margin-top:10px">
+          <button class="btn ghost" id="swToNew">새 큐시트로</button>
+          <button class="btn ghost" id="swToUpdate">기존 갱신</button>
+          <button class="btn ghost" id="swClear">지우기</button>
+        </div>
       </div>
       <div class="presets" id="presets"></div>
 
@@ -254,10 +266,18 @@
         <div class="cue-list" id="cueList"></div>
         <div class="cue-addrow">
           <input class="nm-in" id="cueName" type="text" placeholder="순서 이름 (예: 축사)" maxlength="30">
-          <input class="mm-in" id="cueMin" type="number" inputmode="numeric" min="1" placeholder="분">
+          <input class="mm-in" id="cueM" type="number" inputmode="numeric" min="0" placeholder="분">
+          <input class="mm-in" id="cueS" type="number" inputmode="numeric" min="0" max="59" placeholder="초">
           <button class="btn" id="cueAddBtn">추가</button>
         </div>
         <div class="cue-sum" id="cueSum"></div>
+        <div class="cue-target">
+          <span>진행 방식</span>
+          <span class="t24">
+            <button class="mchip active" id="advManual" style="flex:0 0 auto;padding:8px 16px">수동</button>
+            <button class="mchip" id="advAuto" style="flex:0 0 auto;padding:8px 16px">자동</button>
+          </span>
+        </div>
         <div class="cue-target">
           <span>시작 시간</span>
           <span class="t24">
@@ -295,6 +315,7 @@
         <button class="btn nud" data-d="1">＋1분</button>
         <button class="btn nud" data-d="5">＋5분</button>
       </div>
+      <div class="paste-hint" id="lapList" style="display:none;margin:0 0 10px;text-align:center"></div>
       <div class="ctrl-row">
         <button class="btn btn-pause" id="pauseBtn">일시정지</button>
         <button class="btn btn-next" id="nextBtn" style="display:none">다음 ▶</button>
@@ -330,7 +351,8 @@
       <div class="sheet-title">순서 수정</div>
       <div class="cue-addrow" style="margin-bottom:0">
         <input class="nm-in" id="edName" type="text" maxlength="30">
-        <input class="mm-in" id="edMin" type="number" inputmode="numeric" min="1">
+        <input class="mm-in" id="edM" type="number" inputmode="numeric" min="0" placeholder="분">
+        <input class="mm-in" id="edS" type="number" inputmode="numeric" min="0" max="59" placeholder="초">
       </div>
       <div class="sheet-btns">
         <button class="btn ghost" id="edCancel">취소</button>
@@ -417,45 +439,86 @@
   <div class="overlay" id="setOverlay">
     <div class="sheet">
       <div class="sheet-title">설정</div>
-      <div class="set-label">폰트</div>
-      <div class="font-row" id="fontRow"></div>
-      <div class="set-label">시계 크기</div>
-      <input type="range" id="scaleRange" min="0.7" max="1.5" step="0.05" value="1">
-      <div class="set-label">테마</div>
-      <div class="theme-row" id="themeRow"></div>
-      <div class="color-row">
-        <label>글씨색<input type="color" id="cText"></label>
-        <label>배경색<input type="color" id="cBg"></label>
-        <label>강조색<input type="color" id="cAccent"></label>
-      </div>
-      <div class="set-label">알림 방식</div>
-      <div class="font-row opt" id="amRow">
-        <button class="font-chip" data-v="both">소리+진동</button>
-        <button class="font-chip" data-v="sound">소리만</button>
-        <button class="font-chip" data-v="vib">진동만</button>
-      </div>
-      <div class="set-label">알림음 (누르면 미리듣기)</div>
-      <div class="font-row opt" id="asRow">
-        <button class="font-chip" data-v="beep">비프</button>
-        <button class="font-chip" data-v="chime">차임</button>
-        <button class="font-chip" data-v="bell">벨</button>
-        <button class="font-chip" data-v="alarm">경보</button>
-      </div>
-      <div class="set-label">음량</div>
-      <input type="range" id="volRange" min="0.1" max="1" step="0.1" value="0.6">
-      <div class="set-label">진동 길이 (누르면 미리보기)</div>
-      <div class="font-row opt" id="avRow">
-        <button class="font-chip" data-v="short">짧게</button>
-        <button class="font-chip" data-v="mid">보통</button>
-        <button class="font-chip" data-v="long">길게</button>
-      </div>
-      <div class="set-label">종료 알림 유지 시간</div>
-      <div class="font-row opt" id="adRow">
-        <button class="font-chip" data-v="1">1초</button>
-        <button class="font-chip" data-v="3">3초</button>
-        <button class="font-chip" data-v="5">5초</button>
-        <button class="font-chip" data-v="10">10초</button>
-      </div>
+      <details class="setsec" open>
+        <summary>🎨 화면</summary>
+        <div class="inner">
+          <div class="set-label">폰트</div>
+          <div class="font-row" id="fontRow"></div>
+          <div class="set-label">시계 크기</div>
+          <input type="range" id="scaleRange" min="0.7" max="1.5" step="0.05" value="1">
+          <div class="set-label">테마</div>
+          <div class="theme-row" id="themeRow"></div>
+          <div class="color-row">
+            <label>글씨색<input type="color" id="cText"></label>
+            <label>배경색<input type="color" id="cBg"></label>
+            <label>강조색<input type="color" id="cAccent"></label>
+          </div>
+        </div>
+      </details>
+      <details class="setsec">
+        <summary>🔔 소리·진동 알림</summary>
+        <div class="inner">
+          <div class="set-label">알림 방식</div>
+          <div class="font-row opt" id="amRow">
+            <button class="font-chip" data-v="both">소리+진동</button>
+            <button class="font-chip" data-v="sound">소리만</button>
+            <button class="font-chip" data-v="vib">진동만</button>
+          </div>
+          <div class="set-label">알림음 (누르면 미리듣기)</div>
+          <div class="font-row opt" id="asRow">
+            <button class="font-chip" data-v="beep">비프</button>
+            <button class="font-chip" data-v="chime">차임</button>
+            <button class="font-chip" data-v="bell">벨</button>
+            <button class="font-chip" data-v="alarm">경보</button>
+          </div>
+          <div class="set-label">음량</div>
+          <input type="range" id="volRange" min="0.1" max="1" step="0.1" value="0.6">
+          <div class="set-label">진동 길이 (누르면 미리보기)</div>
+          <div class="font-row opt" id="avRow">
+            <button class="font-chip" data-v="short">짧게</button>
+            <button class="font-chip" data-v="mid">보통</button>
+            <button class="font-chip" data-v="long">길게</button>
+          </div>
+          <div class="set-label">종료 알림 유지 시간</div>
+          <div class="font-row opt" id="adRow">
+            <button class="font-chip" data-v="1">1초</button>
+            <button class="font-chip" data-v="3">3초</button>
+            <button class="font-chip" data-v="5">5초</button>
+            <button class="font-chip" data-v="10">10초</button>
+          </div>
+        </div>
+      </details>
+      <details class="setsec">
+        <summary>📳 폰(시스템) 알림</summary>
+        <div class="inner">
+          <div class="set-label">앱이 화면에 없을 때 알림</div>
+          <div class="font-row opt" id="snRow">
+            <button class="font-chip" data-v="on">켬</button>
+            <button class="font-chip" data-v="off">끔</button>
+          </div>
+          <div class="set-label">알림 강도</div>
+          <div class="font-row opt" id="ssRow">
+            <button class="font-chip" data-v="norm">기본</button>
+            <button class="font-chip" data-v="strong">강하게 (진동 길게 + 유지)</button>
+          </div>
+        </div>
+      </details>
+      <details class="setsec">
+        <summary>🖼 미니창</summary>
+        <div class="inner">
+          <div class="set-label">크기</div>
+          <div class="font-row opt" id="psRow">
+            <button class="font-chip" data-v="small">작게</button>
+            <button class="font-chip" data-v="mid">보통</button>
+            <button class="font-chip" data-v="large">크게</button>
+          </div>
+          <div class="set-label">배경색 · 어둡기(투명 느낌)</div>
+          <div class="color-row" style="margin-top:0">
+            <label>배경색<input type="color" id="cPip"></label>
+          </div>
+          <input type="range" id="pipDimRange" min="0" max="0.8" step="0.1" value="0" style="margin-top:8px">
+        </div>
+      </details>
       <div class="sheet-btns">
         <button class="btn ghost" id="setReset">기본값</button>
         <button class="btn primary" id="setClose">닫기</button>
@@ -516,7 +579,8 @@
     {name:"그린LED",bg:"#050805",text:"#39ff14",accent:"#19c37d"}
   ];
   var DEF={font:FONTS[0].stack,scale:1,bg:"#0b0d12",text:"#f2f5fa",accent:"#56c6d6",offset:15,alerts:true,
-           alertMode:"both",soundType:"chime",volume:0.6,vibLen:"mid",alarmDur:3};
+           alertMode:"both",soundType:"chime",volume:0.6,vibLen:"mid",alarmDur:3,
+           sysNotif:true,sysStrong:"norm",pipSize:"mid",pipBg:"",pipDim:0};
   var settings=loadSettings();
 
   function loadSettings(){
@@ -621,7 +685,7 @@
     if(!settings.alerts)return;
     var snd=settings.alertMode!=="vib",vb=settings.alertMode!=="sound";
     var cueNm=state.cueMode&&cues[state.cueIdx]?cues[state.cueIdx].n:"";
-    if(document.visibilityState!=="visible"){
+    if(document.visibilityState!=="visible"&&!pipVid){
       if(cls==="warn")notify("⏰ 1분 남음",cueNm);
       else if(cls==="crit")notify("⏰ 10초 남음",cueNm);
       else if(cls==="over")notify("🔴 시간 종료!",cueNm);
@@ -657,12 +721,15 @@
   function askNotif(){try{if("Notification" in window&&Notification.permission==="default")Notification.requestPermission();}catch(e){}}
   function notify(title,body){
     try{
+      if(!settings.sysNotif)return;
       if(!("Notification" in window)||Notification.permission!=="granted")return;
+      var strong=settings.sysStrong==="strong";
+      var opts={body:body||"",tag:"stage-clock",renotify:true,icon:"icon-192.png"};
+      if(strong){opts.requireInteraction=true;opts.vibrate=[500,150,500,150,700];}
+      else{opts.vibrate=[300,120,300];}
       if(navigator.serviceWorker&&navigator.serviceWorker.controller){
-        navigator.serviceWorker.ready.then(function(reg){
-          reg.showNotification(title,{body:body||"",tag:"stage-clock",renotify:true,icon:"icon-192.png"});
-        });
-      }else{new Notification(title,{body:body||""});}
+        navigator.serviceWorker.ready.then(function(reg){reg.showNotification(title,opts);});
+      }else{new Notification(title,opts);}
     }catch(e){}
   }
 
@@ -671,21 +738,27 @@
   function pipCls(){var c=remainEl.className;return c.indexOf("over")>-1?"over":(c.indexOf("crit")>-1?"crit":(c.indexOf("warn")>-1?"warn":"good"));}
   function pipDraw(){
     if(!pipCv)return;
-    var ctx=pipCv.getContext("2d"),W=pipCv.width,H=pipCv.height;
-    ctx.fillStyle=settings.bg;ctx.fillRect(0,0,W,H);
+    var ctx=pipCv.getContext("2d"),W=pipCv.width,H=pipCv.height,k=H/300;
+    ctx.fillStyle=settings.pipBg||settings.bg;ctx.fillRect(0,0,W,H);
+    if(settings.pipDim>0){ctx.fillStyle="rgba(0,0,0,"+settings.pipDim+")";ctx.fillRect(0,0,W,H);}
     var cols={good:"#4ade80",warn:"#fbbf24",crit:"#f4515b",over:"#f4515b"};
-    var main=state.running?remainEl.textContent:"--:--";
     ctx.textAlign="center";ctx.textBaseline="middle";
+    /* 현재 시각 + 보조시간 */
+    var now=new Date();
+    ctx.fillStyle=settings.text;ctx.font="600 "+Math.round(26*k)+"px 'Chakra Petch',monospace";
+    var plus=new Date(now.getTime()+settings.offset*60000);
+    ctx.fillText(fmtClock(now)+"   +"+settings.offset+"분 "+pad(plus.getHours())+":"+pad(plus.getMinutes()),W/2,26*k);
     if(state.cueMode&&$("cueNow").textContent){
-      ctx.fillStyle=settings.text;ctx.font="600 34px sans-serif";
-      ctx.fillText($("cueNow").textContent.slice(0,14),W/2,44);
+      ctx.fillStyle=settings.text;ctx.font="600 "+Math.round(30*k)+"px sans-serif";
+      ctx.fillText($("cueNow").textContent.slice(0,14),W/2,64*k);
     }
-    ctx.fillStyle=state.running?cols[pipCls()]:settings.text;
-    ctx.font="700 110px 'Chakra Petch',monospace";
-    ctx.fillText(main,W/2,H/2+14);
-    ctx.fillStyle="#8a93a5";ctx.font="500 26px sans-serif";
-    var sub=state.running?("종료 "+endTimeEl.textContent):"대기";
-    ctx.fillText(sub,W/2,H-34);
+    var main=state.running?remainEl.textContent:"--:--";
+    ctx.fillStyle=state.running?(state.stopwatch?(settings.pipBg?settings.text:"#56c6d6"):cols[pipCls()]):settings.text;
+    ctx.font="700 "+Math.round(104*k)+"px 'Chakra Petch',monospace";
+    ctx.fillText(main,W/2,H/2+18*k);
+    ctx.fillStyle="#8a93a5";ctx.font="500 "+Math.round(24*k)+"px sans-serif";
+    var sub=state.running?(state.stopwatch?("시작 "+endTimeEl.textContent):("종료 "+endTimeEl.textContent)):"대기";
+    ctx.fillText(sub,W/2,H-26*k);
   }
   function stopPip(){
     try{if(document.pictureInPictureElement)document.exitPictureInPicture();}catch(e){}
@@ -697,20 +770,32 @@
     if(pipVid){stopPip();return;}
     if(!document.pictureInPictureEnabled){alert("이 브라우저는 미니창(PiP)을 지원하지 않습니다. Chrome을 사용해 주세요.");return;}
     try{
-      pipCv=document.createElement("canvas");pipCv.width=480;pipCv.height=270;
+      var sz={small:[360,225],mid:[480,300],large:[640,400]}[settings.pipSize]||[480,300];
+      pipCv=document.createElement("canvas");pipCv.width=sz[0];pipCv.height=sz[1];
       pipDraw();
       var stream=pipCv.captureStream(5);
       pipVid=document.createElement("video");
       pipVid.muted=true;pipVid.playsInline=true;pipVid.srcObject=stream;
       pipVid.addEventListener("leavepictureinpicture",stopPip);
       pipVid.play().then(function(){return pipVid.requestPictureInPicture();})
-        .then(function(){pipTm=setInterval(pipDraw,300);})
+        .then(function(){
+          pipTm=setInterval(pipDraw,300);
+          try{
+            if("mediaSession" in navigator){
+              navigator.mediaSession.metadata=new MediaMetadata({title:"무대 진행 시계",artist:"진행 중"});
+              navigator.mediaSession.setActionHandler("play",function(){if(state.running&&state.paused)togglePause();try{pipVid.play();}catch(e){}});
+              navigator.mediaSession.setActionHandler("pause",function(){if(state.running&&!state.paused)togglePause();try{pipVid.play();}catch(e){}});
+              navigator.mediaSession.setActionHandler("nexttrack",function(){if(state.stopwatch)addLap();else if(state.cueMode)$("nextBtn").click();});
+              navigator.mediaSession.setActionHandler("previoustrack",function(){stop();});
+            }
+          }catch(e){}
+        })
         .catch(function(e){stopPip();alert("미니창을 열 수 없습니다: "+((e&&e.message)||"오류"));});
     }catch(e){stopPip();}
   });
 
   function paintAlertOpts(){
-    [["amRow","alertMode"],["asRow","soundType"],["avRow","vibLen"],["adRow","alarmDur"]].forEach(function(p){
+    [["amRow","alertMode"],["asRow","soundType"],["avRow","vibLen"],["adRow","alarmDur"],["ssRow","sysStrong"],["psRow","pipSize"]].forEach(function(p){
       var row=$(p[0]);if(!row)return;
       Array.prototype.forEach.call(row.children,function(b){
         var v=b.getAttribute("data-v");
@@ -719,6 +804,11 @@
       });
     });
     $("volRange").value=settings.volume;
+    Array.prototype.forEach.call($("snRow").children,function(b){
+      b.className="font-chip"+((b.getAttribute("data-v")==="on")===!!settings.sysNotif?" active":"");
+    });
+    $("cPip").value=settings.pipBg||settings.bg;
+    $("pipDimRange").value=settings.pipDim;
   }
   function optHandler(rowId,key,preview){
     $(rowId).addEventListener("click",function(e){
@@ -733,6 +823,16 @@
   optHandler("asRow","soundType",function(){ensureAudio();playSound(1);});
   optHandler("avRow","vibLen",function(){vib(vibPattern(1));});
   optHandler("adRow","alarmDur",null);
+  optHandler("ssRow","sysStrong",null);
+  optHandler("psRow","pipSize",null);
+  $("snRow").addEventListener("click",function(e){
+    var b=e.target.closest(".font-chip");if(!b)return;
+    settings.sysNotif=b.getAttribute("data-v")==="on";
+    if(settings.sysNotif)askNotif();
+    saveSettings();paintAlertOpts();
+  });
+  $("cPip").addEventListener("input",function(){settings.pipBg=this.value;saveSettings();});
+  $("pipDimRange").addEventListener("input",function(){settings.pipDim=parseFloat(this.value);saveSettings();});
   $("volRange").addEventListener("input",function(){settings.volume=parseFloat(this.value);saveSettings();});
   $("volRange").addEventListener("change",function(){ensureAudio();playSound(1);});
 
@@ -741,24 +841,19 @@
   function paintMode(){
     $("modeDown").className="mchip"+(curMode==="down"?" active":"");
     $("modeUp").className="mchip"+(curMode==="up"?" active":"");
-    $("modeEnd").className="mchip"+(curMode==="end"?" active":"");
+    $("modeTimer").className="mchip"+(curMode==="timer"?" active":"");
     $("modeCue").className="mchip"+(curMode==="cue"?" active":"");
-    var cue=curMode==="cue",end=curMode==="end";
-    $("inputRow").style.display=(cue||end)?"none":"flex";
-    $("endTimeArea").style.display=end?"flex":"none";
-    $("presets").style.display=(cue||end)?"none":"flex";
+    var cue=curMode==="cue",tm=curMode==="timer";
+    $("inputRow").style.display=(cue||tm)?"none":"flex";
+    $("timerArea").style.display=tm?"block":"none";
+    $("presets").style.display=(cue||tm)?"none":"flex";
     $("cueEditor").style.display=cue?"block":"none";
+    if(tm)paintSwSummary();
+    paintClearBtn();
   }
   $("modeDown").addEventListener("click",function(){curMode="down";paintMode();});
   $("modeUp").addEventListener("click",function(){curMode="up";paintMode();});
-  $("modeEnd").addEventListener("click",function(){
-    curMode="end";paintMode();
-    if(!endPick){
-      var t=new Date(Date.now()+30*60000);
-      t.setMinutes(Math.ceil(t.getMinutes()/5)*5,0,0);
-      endPick={h:t.getHours(),m:t.getMinutes()};paintEndBtn();
-    }
-  });
+  $("modeTimer").addEventListener("click",function(){curMode="timer";paintMode();});
   $("modeCue").addEventListener("click",function(){curMode="cue";paintMode();renderCues();});
 
   /* ===== 24시간 시계판 선택기 ===== */
@@ -808,44 +903,115 @@
     $("tpOverlay").classList.add("show");
   }
 
-  /* 종료시각 역산 시작 */
-  var endPick=null;
-  function paintEndBtn(){
-    var b=$("endBtn24");
-    b.textContent=endPick?pad(endPick.h)+":"+pad(endPick.m):"--:--";
-    b.className="tbtn big"+(endPick?"":" empty");
+  /* ===== 타이머(리허설 스톱워치 → 큐시트) ===== */
+  function loadLaps(){try{var r=lsGet("sc_swlaps");if(r)return JSON.parse(r);}catch(e){}return [];}
+  var swLaps=loadLaps(),swLastMarkMs=0;
+  function saveLaps(){lsSet("sc_swlaps",JSON.stringify(swLaps));}
+  function lapStr(){return swLaps.map(function(l,i){return "구간"+(i+1)+" "+fmtDur(l.sec);}).join(" · ");}
+  function paintSwSummary(){
+    var s=$("swSummary"),row=$("swApplyRow");
+    if(!swLaps.length){s.textContent="타이머를 돌리다 「기록」을 누르면 구간 시간이 저장됩니다. 리허설 실측으로 큐시트를 만들 때 쓰세요.";row.style.display="none";return;}
+    var tot=0;swLaps.forEach(function(l){tot+=l.sec;});
+    s.innerHTML='<b style="color:var(--text);font-size:14px">구간 '+swLaps.length+'개 · 총 '+fmtDur(tot)+'</b>'+
+      '<div style="max-height:96px;overflow-y:auto;margin-top:6px;line-height:1.9">'+lapStr()+'</div>';
+    row.style.display="flex";
   }
-  $("endBtn24").addEventListener("click",function(){
-    openPicker("종료 시각 선택",endPick,function(h,m){endPick={h:h,m:m};paintEndBtn();});
+  function paintLapList(){
+    var el=$("lapList");
+    if(!swLaps.length){el.textContent="「기록」을 누르면 구간이 저장됩니다";return;}
+    var tot=0;swLaps.forEach(function(l){tot+=l.sec;});
+    var last=swLaps[swLaps.length-1];
+    el.innerHTML='구간 <b style="color:var(--text)">'+swLaps.length+'개</b> · 총 '+fmtDur(tot)+' · 최근 '+fmtDur(last.sec)+
+      ' <button class="tclr" id="lapUndo" style="padding:5px 12px;margin-left:8px">최근 취소</button>';
+  }
+  $("lapList").addEventListener("click",function(e){
+    if(!e.target.closest("#lapUndo"))return;
+    var rm=swLaps.pop();
+    if(rm)swLastMarkMs=Math.max(0,swLastMarkMs-rm.sec);
+    saveLaps();paintLapList();
   });
-  $("endGoBtn").addEventListener("click",function(){
-    if(!endPick){$("endBtn24").click();return;}
-    var d=new Date();d.setHours(endPick.h,endPick.m,0,0);
-    var t=d.getTime();
-    if(t<=Date.now())t+=86400000; // 이미 지난 시각이면 내일
-    state.totalSec=Math.max(1,Math.round((t-Date.now())/1000));
-    state.endMs=t;
-    state.running=true;state.paused=false;
-    state.mode="down";state.lastCls=null;
-    state.cueMode=false;paintCueChrome();
-    ensureAudio();askNotif();startKeepAlive();
+  function swElapsed(){return elapsedNow();}
+  function startStopwatch(){
+    state.running=true;state.paused=false;state.stopwatch=true;state.cueMode=false;
+    state.cueStartMs=Date.now();state.pausedAccum=0;state.lastCls=null;
+    swLaps=[];saveLaps();swLastMarkMs=0;
+    ensureAudio();startKeepAlive();
     panel.className="panel run-mode";
-    statusEl.textContent="진행 중";statusEl.className="status live";
+    statusEl.textContent="타이머";statusEl.className="status live";
+    $("pauseBtn").textContent="일시정지";
+    $("nudgeRow").style.display="none";
+    $("lapList").style.display="block";paintLapList();
+    paintCueChrome();
     requestWake();paintCountdown();
+  }
+  $("swStartBtn").addEventListener("click",startStopwatch);
+  function addLap(){
+    if(!state.stopwatch)return;
+    var e=Math.round(swElapsed()/1000),lap=e-swLastMarkMs;
+    if(lap<1)return;
+    swLaps.push({sec:lap});swLastMarkMs=e;saveLaps();paintLapList();
+    if(settings.alerts&&settings.alertMode!=="vib")playSound(1);
+    if(settings.alerts&&settings.alertMode!=="sound")vib(80);
+  }
+  $("swToNew").addEventListener("click",function(){
+    if(!swLaps.length)return;
+    cues=swLaps.map(function(l,i){return{n:"구간"+(i+1),s:l.sec};});
+    saveCues();curMode="cue";paintMode();renderCues();
   });
+  $("swToUpdate").addEventListener("click",function(){
+    if(!swLaps.length)return;
+    if(!cues.length){$("swToNew").click();return;}
+    var n=Math.min(cues.length,swLaps.length);
+    for(var i=0;i<n;i++)cues[i].s=swLaps[i].sec;
+    saveCues();curMode="cue";paintMode();renderCues();
+  });
+  $("swClear").addEventListener("click",function(){swLaps=[];saveLaps();paintSwSummary();});
 
   /* ===== 큐시트 데이터/편집 ===== */
-  function loadCues(){try{var r=lsGet("sc_cues");if(r)return JSON.parse(r);}catch(e){}return [];}
+  function loadCues(){
+    try{var r=lsGet("sc_cues");if(r){
+      return JSON.parse(r).map(function(c){return c.s!=null?c:{n:c.n,s:Math.max(1,(c.m||1)*60)};});
+    }}catch(e){}
+    return [];
+  }
+  function fmtCueDur(s){
+    if(s<60)return s+"초";
+    if(s%60===0)return (s/60)+"분";
+    return Math.floor(s/60)+"분 "+(s%60)+"초";
+  }
+  function readMS(mId,sId){
+    var m=parseInt($(mId).value,10),s=parseInt($(sId).value,10);
+    if(isNaN(m))m=0;if(isNaN(s))s=0;
+    if(m<0||s<0||s>59)return NaN;
+    return m*60+s;
+  }
+  /* 한 줄 텍스트 → {n,sec} : "축사 2분 30초" / "공연 2:30" / "구호 30초" / "축사 10" */
+  function parseLineDur(t){
+    var m,sec=null,name="";
+    if((m=t.match(/^(.+?)[\s,:\-–.]*?(\d{1,3})\s*분\s*(\d{1,2})\s*초?\s*$/))){name=m[1];sec=parseInt(m[2],10)*60+parseInt(m[3],10);}
+    else if((m=t.match(/^(.+?)[\s,\-–]+(\d{1,3}):([0-5]\d)\s*$/))){name=m[1];sec=parseInt(m[2],10)*60+parseInt(m[3],10);}
+    else if((m=t.match(/^(.+?)[\s,:\-–.]*?(\d{1,4})\s*초\s*$/))){name=m[1];sec=parseInt(m[2],10);}
+    else if((m=t.match(/^(.+?)[\s:\-–.,]*?(\d{1,3})\s*분?\s*[)\]]?$/))){name=m[1];sec=parseInt(m[2],10)*60;}
+    if(sec===null)return null;
+    name=name.trim().replace(/[\-–:.,]+$/,"").trim();
+    if(!name||sec<1||sec>36000||name.replace(/[\d\s]/g,"").length<1)return null;
+    return {n:name,sec:sec};
+  }
   function saveCues(){lsSet("sc_cues",JSON.stringify(cues));}
   var cues=loadCues();
 
+  function paintClearBtn(){
+    var ca=$("cueClearAll");if(!ca)return;
+    ca.style.display=(curMode==="cue"&&cues.length)?"inline-block":"none";
+    ca.textContent="전체 지우기";
+  }
   function renderCues(){
-    paintCueSum();autoTarget();
+    paintCueSum();autoTarget();paintClearBtn();
     var wrap=$("cueList");wrap.innerHTML="";
     if(!cues.length){wrap.innerHTML='<div class="cue-empty">아직 순서가 없습니다.<br>아래에서 추가하거나 「첨부」를 눌러 불러오세요.</div>';return;}
     cues.forEach(function(c,i){
       var row=document.createElement("div");row.className="cue-row";row.setAttribute("data-i",i);
-      row.innerHTML='<span class="body"><span class="idx">'+(i+1)+'</span><span class="nm"></span><span class="mm">'+c.m+'분</span></span>'+
+      row.innerHTML='<span class="body"><span class="idx">'+(i+1)+'</span><span class="nm"></span><span class="mm">'+fmtCueDur(c.s)+'</span></span>'+
         '<button class="rbtn" data-a="up" data-i="'+i+'">↑</button>'+
         '<button class="rbtn" data-a="dn" data-i="'+i+'">↓</button>'+
         '<button class="rbtn del" data-a="del" data-i="'+i+'">×</button>';
@@ -857,16 +1023,18 @@
   function openEdit(i){
     if(!cues[i])return;
     editIdx=i;
-    $("edName").value=cues[i].n;$("edMin").value=cues[i].m;
+    $("edName").value=cues[i].n;
+    $("edM").value=Math.floor(cues[i].s/60)||"";
+    $("edS").value=cues[i].s%60||"";
     $("editOverlay").classList.add("show");
   }
   $("edCancel").addEventListener("click",function(){$("editOverlay").classList.remove("show");});
   $("editOverlay").addEventListener("click",function(e){if(e.target===this)this.classList.remove("show");});
   $("edSave").addEventListener("click",function(){
-    var n=$("edName").value.trim(),m=parseInt($("edMin").value,10);
+    var n=$("edName").value.trim(),sec=readMS("edM","edS");
     if(!n){$("edName").focus();return;}
-    if(isNaN(m)||m<1){$("edMin").focus();return;}
-    if(cues[editIdx]){cues[editIdx]={n:n,m:m};saveCues();renderCues();}
+    if(isNaN(sec)||sec<1){$("edM").focus();return;}
+    if(cues[editIdx]){cues[editIdx]={n:n,s:sec};saveCues();renderCues();}
     $("editOverlay").classList.remove("show");
   });
   $("cueList").addEventListener("click",function(e){
@@ -882,14 +1050,35 @@
     var row=e.target.closest(".cue-row");
     if(row)openEdit(parseInt(row.getAttribute("data-i"),10));
   });
-  $("cueAddBtn").addEventListener("click",function(){
-    var n=$("cueName").value.trim(),m=parseInt($("cueMin").value,10);
-    if(!n){$("cueName").focus();return;}
-    if(isNaN(m)||m<1){$("cueMin").focus();return;}
-    cues.push({n:n,m:m});saveCues();renderCues();
-    $("cueName").value="";$("cueMin").value="";$("cueName").focus();
+  var autoAdv=lsGet("sc_cue_auto")==="1";
+  function paintAdv(){
+    $("advManual").className="mchip"+(autoAdv?"":" active");
+    $("advAuto").className="mchip"+(autoAdv?" active":"");
+  }
+  $("advManual").addEventListener("click",function(){autoAdv=false;lsSet("sc_cue_auto","");paintAdv();});
+  $("advAuto").addEventListener("click",function(){autoAdv=true;lsSet("sc_cue_auto","1");paintAdv();});
+  paintAdv();
+  var clearArm=null;
+  $("cueClearAll").addEventListener("click",function(){
+    var b=this;
+    if(!cues.length)return;
+    if(clearArm){
+      clearTimeout(clearArm);clearArm=null;
+      cues=[];saveCues();renderCues();
+      return;
+    }
+    b.textContent="⚠ 한 번 더";
+    clearArm=setTimeout(function(){clearArm=null;b.textContent="전체 지우기";},3000);
   });
-  $("cueMin").addEventListener("keydown",function(e){if(e.key==="Enter")$("cueAddBtn").click();});
+  $("cueAddBtn").addEventListener("click",function(){
+    var n=$("cueName").value.trim(),sec=readMS("cueM","cueS");
+    if(!n){$("cueName").focus();return;}
+    if(isNaN(sec)||sec<1){$("cueM").focus();return;}
+    cues.push({n:n,s:sec});saveCues();renderCues();
+    $("cueName").value="";$("cueM").value="";$("cueS").value="";$("cueName").focus();
+  });
+  $("cueS").addEventListener("keydown",function(e){if(e.key==="Enter")$("cueAddBtn").click();});
+  $("cueM").addEventListener("keydown",function(e){if(e.key==="Enter")$("cueAddBtn").click();});
 
   /* 붙여넣기 */
   $("cuePasteBtn").addEventListener("click",function(){$("pasteIn").value="";$("ocrStatus").textContent="";$("ocrStatus").className="ocr-status";$("pasteOverlay").classList.add("show");});
@@ -1049,16 +1238,13 @@
       if(NOISE.test(t)){pending="";return;}
       /* 앞의 행번호/앵콜 라벨 제거: "1 바다가...", "앵콜 Angel Bell..." */
       t=t.replace(/^(\d{1,2}|앵\s*콜)[\s.)\-]+(?=\S)/,"");
-      /* 끝의 시간: "4분" 또는 표 옆칸의 맨숫자 "5" */
-      var m=t.match(/^(.+?)[\s:\-–.,]*?(\d{1,3})\s*분?\s*[)\]]?$/);
-      if(m){
-        var name=m[1].trim().replace(/[\-–:.,]+$/,"").trim();
-        var mins=parseInt(m[2],10);
-        if(name&&mins>=1&&mins<=600&&name.replace(/[\d\s]/g,"").length>=1){
-          if(pending&&name.length<25){name=(pending+" "+name).slice(0,40);}
-          out.push(name+" "+mins);
-          pending="";return;
-        }
+      /* 끝의 시간: "4분" / "2분 30초" / "30초" / "2:30" / 맨숫자 "5" */
+      var p=parseLineDur(t);
+      if(p){
+        var name=p.n;
+        if(pending&&name.length<25){name=(pending+" "+name).slice(0,40);}
+        out.push(name+" "+fmtCueDur(p.sec).replace(/ /g,""));
+        pending="";return;
       }
       /* 숫자 없는 줄(두 줄짜리 곡명 앞부분)은 다음 줄에 이어붙일 후보로 보관 */
       var p=t.replace(/^\d\s*부[\s.)\-]*/,"").replace(/^(\d{1,2}|앵\s*콜)[\s.)\-]+(?=\S)/,"").trim();
@@ -1072,8 +1258,8 @@
   $("pasteSave").addEventListener("click",function(){
     var lines=$("pasteIn").value.split(/\n+/),added=0;
     lines.forEach(function(line){
-      var m=line.trim().match(/^(.+?)[\s,]+(\d+)\s*분?\s*$/);
-      if(m){cues.push({n:m[1].trim(),m:parseInt(m[2],10)});added++;}
+      var p=parseLineDur(line.replace(/\s+/g," ").trim());
+      if(p){cues.push({n:p.n,s:p.sec});added++;}
     });
     if(added){saveCues();renderCues();}
     $("pasteOverlay").classList.remove("show");
@@ -1096,7 +1282,7 @@
   function calcEnd(start,addMin){var tot=start.h*60+start.m+addMin;tot=((tot%1440)+1440)%1440;return{h:Math.floor(tot/60),m:tot%60};}
   function autoTarget(){
     if(!tgCustom){
-      cueTarget=(cueStart&&cues.length)?calcEnd(cueStart,cueTotalMin()):null;
+      cueTarget=(cueStart&&cues.length)?calcEnd(cueStart,Math.round(cueTotalSec()/60)):null;
       saveHM("sc_cue_target",cueTarget);
     }
     paintTimeBtns();
@@ -1131,12 +1317,12 @@
   });
   $("tgClear").addEventListener("click",function(){tgCustom=false;lsSet("sc_cue_tgcustom","");autoTarget();});
   function getTargetMs(){if(!cueTarget)return null;var d=new Date();d.setHours(cueTarget.h,cueTarget.m,0,0);return d.getTime();}
-  function cueTotalMin(){var s=0;cues.forEach(function(c){s+=c.m;});return s;}
+  function cueTotalSec(){var s=0;cues.forEach(function(c){s+=c.s;});return s;}
   function paintCueSum(){
     var el=$("cueSum");if(!el)return;
     if(!cues.length){el.textContent="";return;}
-    var s=cueTotalMin(),e=calcEnd(cueStart,s);
-    el.textContent="합계 "+s+"분 · "+fmtHM(cueStart)+" 시작하면 "+pad(e.h)+":"+pad(e.m)+" 종료";
+    var ts=cueTotalSec(),e=calcEnd(cueStart,Math.round(ts/60));
+    el.textContent="합계 "+fmtCueDur(ts)+" · "+fmtHM(cueStart)+" 시작하면 "+pad(e.h)+":"+pad(e.m)+" 종료";
   }
   paintTimeBtns();
 
@@ -1152,7 +1338,7 @@
   function logCurrentCue(){
     if(!state.cueMode||!runLog)return;
     var c=cues[state.cueIdx];if(!c)return;
-    runLog.items.push({n:c.n,m:c.m,sec:Math.round(elapsedNow()/1000)});
+    runLog.items.push({n:c.n,ps:c.s,sec:Math.round(elapsedNow()/1000)});
   }
   function finalizeRun(){
     if(runLog&&runLog.items.length){logs.unshift(runLog);logs=logs.slice(0,20);saveLogs();}
@@ -1167,9 +1353,10 @@
       var div=document.createElement("div");div.className="log-run";
       var h='<div class="log-date">'+(d.getMonth()+1)+"/"+d.getDate()+" "+pad(d.getHours())+":"+pad(d.getMinutes())+'</div>';
       r.items.forEach(function(it){
-        tp+=it.m*60;ta+=it.sec;
-        var diff=it.sec-it.m*60,ds=(diff>=0?"+":"−")+fmtDur(Math.abs(diff));
-        h+='<div class="log-item"><span class="n"></span><span class="d">'+it.m+"분 → "+fmtDur(it.sec)+" ("+ds+")</span></div>";
+        var ps=it.ps!=null?it.ps:(it.m||0)*60;
+        tp+=ps;ta+=it.sec;
+        var diff=it.sec-ps,ds=(diff>=0?"+":"−")+fmtDur(Math.abs(diff));
+        h+='<div class="log-item"><span class="n"></span><span class="d">'+fmtDur(ps)+" → "+fmtDur(it.sec)+" ("+ds+")</span></div>";
       });
       var td=ta-tp,tds=(td>=0?"+":"−")+fmtDur(Math.abs(td));
       h+='<div class="log-total"><span>합계</span><span class="d">'+fmtDur(tp)+" → "+fmtDur(ta)+" ("+tds+")</span></div>";
@@ -1190,9 +1377,10 @@
     logs.forEach(function(r){
       var d=new Date(r.date),tp=0,ta=0,rows="";
       r.items.forEach(function(it){
-        tp+=it.m*60;ta+=it.sec;
-        var diff=it.sec-it.m*60,ds=(diff>=0?"+":"−")+fmtDur(Math.abs(diff));
-        rows+="<tr><td>"+esc(it.n)+"</td><td>"+it.m+"분</td><td>"+fmtDur(it.sec)+"</td><td class='"+(diff>0?"ov":"ok")+"'>"+ds+"</td></tr>";
+        var ps=it.ps!=null?it.ps:(it.m||0)*60;
+        tp+=ps;ta+=it.sec;
+        var diff=it.sec-ps,ds=(diff>=0?"+":"−")+fmtDur(Math.abs(diff));
+        rows+="<tr><td>"+esc(it.n)+"</td><td>"+fmtDur(ps)+"</td><td>"+fmtDur(it.sec)+"</td><td class='"+(diff>0?"ov":"ok")+"'>"+ds+"</td></tr>";
       });
       var td=ta-tp,tds=(td>=0?"+":"−")+fmtDur(Math.abs(td));
       body+="<h2>"+d.getFullYear()+"년 "+(d.getMonth()+1)+"월 "+d.getDate()+"일 "+pad(d.getHours())+":"+pad(d.getMinutes())+"</h2>"
@@ -1220,26 +1408,27 @@
     var c=cues[i];if(!c)return;
     state.cueIdx=i;
     state.cueStartMs=Date.now();state.pausedAccum=0;
-    state.totalSec=c.m*60;
+    state.totalSec=c.s;
     state.endMs=Date.now()+state.totalSec*1000;
     state.running=true;state.paused=false;
     state.mode="down";state.lastCls=null;
     panel.className="panel run-mode";
-    statusEl.textContent="진행 중 "+(i+1)+"/"+cues.length;statusEl.className="status live";
+    statusEl.textContent="진행 중 "+(i+1)+"/"+cues.length+(state.autoAdvance?" · 자동":"");statusEl.className="status live";
     $("pauseBtn").textContent="일시정지";
     paintCueChrome();
     requestWake();paintCountdown();
   }
   function paintCueChrome(){
-    var cue=state.cueMode;
+    var cue=state.cueMode,sw=state.stopwatch;
     $("cueHead").style.display=cue?"block":"none";
     $("allEndRow").style.display=cue?"flex":"none";
-    $("nextBtn").style.display=cue?"block":"none";
-    $("endKey").textContent=cue?"이 순서 종료":"종료 예정";
+    $("nextBtn").style.display=(cue||sw)?"block":"none";
+    if(sw)$("nextBtn").textContent="기록";
+    $("endKey").textContent=cue?"이 순서 종료":(sw?"시작 시각":"종료 예정");
     if(cue){
       var c=cues[state.cueIdx],nx=cues[state.cueIdx+1];
       $("cueNow").textContent=c?c.n:"";
-      $("cueNext").textContent=nx?("다음: "+nx.n+" ("+nx.m+"분)"):"마지막 순서";
+      $("cueNext").textContent=nx?("다음: "+nx.n+" ("+fmtCueDur(nx.s)+")"):"마지막 순서";
       $("nextBtn").textContent=nx?"다음 ▶":"마침";
     }
   }
@@ -1247,11 +1436,13 @@
     if(!cues.length){$("cueName").focus();return;}
     ensureAudio();askNotif();startKeepAlive();
     state.cueMode=true;
-    state.planEndMs=Date.now()+cueTotalMin()*60000;
+    state.autoAdvance=autoAdv;
+    state.planEndMs=Date.now()+cueTotalSec()*1000;
     runLog={date:Date.now(),items:[]};
     startCueAt(0);
   });
   $("nextBtn").addEventListener("click",function(){
+    if(state.stopwatch){addLap();return;}
     if(!state.cueMode)return;
     if(state.cueIdx+1<cues.length){logCurrentCue();startCueAt(state.cueIdx+1);}
     else{stop();}
@@ -1340,9 +1531,24 @@
   function stateOf(ms){if(ms<=0)return"over";if(ms<=10000)return"crit";if(ms<=60000)return"warn";return"good";}
   function paintCountdown(){
     if(!state.running)return;
+    if(state.stopwatch){
+      var el=elapsedNow();
+      setCells(remainEl,fmtRemain(el));
+      remainEl.className="remain tnum";
+      remainLabel.textContent=state.paused?"일시정지":"경과 시간";
+      barFill.style.width="100%";barFill.className="bar-fill";
+      setCells(endTimeEl,fmtClock(new Date(state.cueStartMs)));
+      return;
+    }
     var remainMs=state.paused?state.pausedRemainMs:(state.endMs-Date.now());
     var cls=stateOf(remainMs);
     if(!state.paused&&cls!==state.lastCls){if(state.lastCls)alertFor(cls);state.lastCls=cls;}
+    if(state.cueMode&&state.autoAdvance&&!state.paused&&remainMs<=0){
+      logCurrentCue();
+      if(state.cueIdx+1<cues.length){startCueAt(state.cueIdx+1);}
+      else{stop();}
+      return;
+    }
     var showMs=state.mode==="up"?Math.max(0,state.totalSec*1000-remainMs):remainMs;
     setCells(remainEl,fmtRemain(showMs));
     remainEl.className="remain tnum"+(cls==="good"?"":" "+cls);
@@ -1353,8 +1559,8 @@
     var shownEndMs=state.paused?(Date.now()+state.pausedRemainMs):state.endMs;
     setCells(endTimeEl,fmtClock(new Date(shownEndMs)));
     if(state.cueMode){
-      var sum=0;for(var i=state.cueIdx+1;i<cues.length;i++)sum+=cues[i].m;
-      var allEndMs=shownEndMs+sum*60000;
+      var sum=0;for(var i=state.cueIdx+1;i<cues.length;i++)sum+=cues[i].s;
+      var allEndMs=shownEndMs+sum*1000;
       setCells($("allEnd"),fmtClock(new Date(allEndMs)));
       var tg=getTargetMs(),td=$("targetDiff");
       var base=(tg!==null)?tg:state.planEndMs;
@@ -1398,6 +1604,14 @@
   }
   function stop(){
     stopKeepAlive();stopPip();
+    if(state.stopwatch){
+      var e=Math.round(elapsedNow()/1000),tail=e-swLastMarkMs;
+      if(tail>=1){swLaps.push({sec:tail});saveLaps();}
+      state.stopwatch=false;
+      $("nudgeRow").style.display="flex";
+      $("lapList").style.display="none";
+      if(curMode==="timer")paintSwSummary();
+    }
     if(state.cueMode){logCurrentCue();finalizeRun();}
     state.running=false;state.paused=false;state.cueMode=false;
     panel.className="panel input-mode";
