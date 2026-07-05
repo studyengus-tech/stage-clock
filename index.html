@@ -115,7 +115,7 @@
   .cue-head{text-align:center;margin-bottom:4px;display:none}
   .cue-head .now{font-size:clamp(17px,4.6vmin,24px);font-weight:600}
   .cue-head .nxt{font-size:13px;color:var(--muted);margin-top:3px}
-  .btn-next{flex:1;padding:13px;font-size:15px;background:var(--accent);color:var(--on-accent)}
+  .btn-next{flex:1;padding:13px 6px;font-size:14px;background:var(--accent);color:var(--on-accent);white-space:nowrap;min-width:0}
   textarea.paste-in{width:100%;min-height:130px;background:var(--surface-2);border:1px solid var(--line);border-radius:12px;color:var(--text);padding:10px 12px;font-size:15px;outline:none;resize:vertical;font-family:var(--ui)}
   .paste-hint{font-size:12px;color:var(--muted);margin-top:8px;line-height:1.5}
   .ocr-row{display:flex;margin-bottom:10px}
@@ -157,8 +157,8 @@
   .log-item .d{font-family:var(--display);flex:0 0 auto}
   .log-total{border-top:1px solid var(--line);margin-top:6px;padding-top:6px;font-weight:600;display:flex;justify-content:space-between;font-size:13px}
   .log-empty{color:var(--muted);text-align:center;padding:16px 0;font-size:14px}
-  .btn-pause{flex:1;padding:13px;font-size:15px;background:var(--surface-2);color:var(--text);border:1px solid var(--line)}
-  .btn-stop{flex:1;padding:13px;font-size:15px;background:var(--surface-2);color:var(--crit);border:1px solid var(--line)}
+  .btn-pause{flex:1;padding:13px 6px;font-size:14px;background:var(--surface-2);color:var(--text);border:1px solid var(--line);white-space:nowrap;min-width:0}
+  .btn-stop{flex:1;padding:13px 6px;font-size:14px;background:var(--surface-2);color:var(--crit);border:1px solid var(--line);white-space:nowrap;min-width:0}
 
   /* ===== 가로 모드: 좌 70% 시계 / 우 30% 런타임 ===== */
   @media (orientation:landscape){
@@ -318,6 +318,7 @@
       <div class="paste-hint" id="lapList" style="display:none;margin:0 0 10px;text-align:center"></div>
       <div class="ctrl-row">
         <button class="btn btn-pause" id="pauseBtn">일시정지</button>
+        <button class="btn btn-pause" id="prevBtn" style="display:none">◀ 이전</button>
         <button class="btn btn-next" id="nextBtn" style="display:none">다음 ▶</button>
         <button class="btn btn-stop" id="stopBtn">정지</button>
       </div>
@@ -685,7 +686,7 @@
     if(!settings.alerts)return;
     var snd=settings.alertMode!=="vib",vb=settings.alertMode!=="sound";
     var cueNm=state.cueMode&&cues[state.cueIdx]?cues[state.cueIdx].n:"";
-    if(document.visibilityState!=="visible"&&!pipVid){
+    if(document.visibilityState!=="visible"&&(!pipVid||settings.alertMode!=="sound")){
       if(cls==="warn")notify("⏰ 1분 남음",cueNm);
       else if(cls==="crit")notify("⏰ 10초 남음",cueNm);
       else if(cls==="over")notify("🔴 시간 종료!",cueNm);
@@ -824,12 +825,24 @@
   optHandler("avRow","vibLen",function(){vib(vibPattern(1));});
   optHandler("adRow","alarmDur",null);
   optHandler("ssRow","sysStrong",null);
-  optHandler("psRow","pipSize",null);
+  optHandler("psRow","pipSize",function(){
+    if(pipVid){try{stopPip();$("pipBtn").click();}catch(e){}}
+  });
   $("snRow").addEventListener("click",function(e){
     var b=e.target.closest(".font-chip");if(!b)return;
     settings.sysNotif=b.getAttribute("data-v")==="on";
-    if(settings.sysNotif)askNotif();
     saveSettings();paintAlertOpts();
+    if(settings.sysNotif){
+      try{
+        if(!("Notification" in window)){alert("이 브라우저는 시스템 알림을 지원하지 않습니다.");}
+        else if(Notification.permission==="denied"){alert("알림 권한이 차단되어 있어 시스템 알림이 표시되지 않습니다.\n폰 설정 → 알림 → 이 앱(또는 Chrome 사이트 설정)에서 허용해 주세요.");}
+        else if(Notification.permission==="default"){
+          Notification.requestPermission().then(function(p){
+            if(p!=="granted")alert("알림 권한이 허용되지 않아 시스템 알림이 표시되지 않습니다.");
+          });
+        }
+      }catch(err){}
+    }
   });
   $("cPip").addEventListener("input",function(){settings.pipBg=this.value;saveSettings();});
   $("pipDimRange").addEventListener("input",function(){settings.pipDim=parseFloat(this.value);saveSettings();});
@@ -1423,6 +1436,13 @@
     $("cueHead").style.display=cue?"block":"none";
     $("allEndRow").style.display=cue?"flex":"none";
     $("nextBtn").style.display=(cue||sw)?"block":"none";
+    $("prevBtn").style.display=cue?"block":"none";
+    $("nudgeRow").style.display=(cue||sw)?"none":"flex";
+    if(cue){
+      var first=state.cueIdx===0;
+      $("prevBtn").style.opacity=first?"0.4":"1";
+      $("prevBtn").style.pointerEvents=first?"none":"auto";
+    }
     if(sw)$("nextBtn").textContent="기록";
     $("endKey").textContent=cue?"이 순서 종료":(sw?"시작 시각":"종료 예정");
     if(cue){
@@ -1440,6 +1460,10 @@
     state.planEndMs=Date.now()+cueTotalSec()*1000;
     runLog={date:Date.now(),items:[]};
     startCueAt(0);
+  });
+  $("prevBtn").addEventListener("click",function(){
+    if(!state.cueMode||state.cueIdx===0)return;
+    startCueAt(state.cueIdx-1);
   });
   $("nextBtn").addEventListener("click",function(){
     if(state.stopwatch){addLap();return;}
